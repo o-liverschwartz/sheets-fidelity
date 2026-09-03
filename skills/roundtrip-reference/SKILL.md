@@ -1,5 +1,5 @@
 ---
-name: google-sheets-roundtrip-reference
+name: roundtrip-reference
 description: Reference skill for Google Sheets API round-trip fidelity. Use when reading, writing, auditing, or designing Google Sheets behavior involving values, formulas, formatting, row/column metadata, grouping, frozen panes, merges, filters, protections, banding, or conditional formatting.
 ---
 

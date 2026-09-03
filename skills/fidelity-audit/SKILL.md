@@ -1,5 +1,5 @@
 ---
-name: sheets-fidelity-audit
+name: fidelity-audit
 description: Audits a Google Sheets workflow for read-store-write fidelity. Use when a sheet imports correctly but writes back wrong, or when values, formulas, formatting, notes, groups, hidden rows, frozen panes, banding, or conditional rules may be drifting.
 disable-model-invocation: true
 ---

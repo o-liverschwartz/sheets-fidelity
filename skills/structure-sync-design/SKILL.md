@@ -1,5 +1,5 @@
 ---
-name: sheets-structure-sync-design
+name: structure-sync-design
 description: Designs a safe Google Sheets content-sync and layout-sync architecture, especially for repeated blocks, formulas, formatting, groups, hidden rows, and frozen panes. Use when building or refactoring a sheet editor, template engine, or sync system.
 disable-model-invocation: true
 ---
