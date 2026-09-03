@@ -1,7 +1,7 @@
 # sheets-fidelity
 
 A small set of tools and agent skills for editing Google Sheets without silently
-destroying things you didn't mean to touch.
+destroying things that matter.
 
 Reading a sheet is easy. Reading it, holding it in an app, and writing it back
 without losing something is not. The failure is almost always silent: the values

@@ -1,7 +1,7 @@
 {
   "name": "google-sheets-roundtrip",
   "metadata": {
-    "description": "A small set of tools and agent skills for editing Google Sheets without silently destroying things you didn't mean to touch. Reference, diagnostic and architecture skills, plus a tested Python library for the API's value, formatting and structure layers."
+    "description": "A small set of tools and agent skills for editing Google Sheets without silently destroying things that matter."
   },
   "owner": {
     "name": "Oliver Schwartz"
