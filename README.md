@@ -119,8 +119,8 @@ examples/                  runnable shapes
 The skills, as a Claude Code plugin:
 
 ```
-/plugin marketplace add o-liverschwartz/google-sheets-roundtrip
-/plugin install google-sheets-roundtrip@google-sheets-roundtrip
+/plugin marketplace add o-liverschwartz/sheets-fidelity
+/plugin install sheets-fidelity@sheets-fidelity
 ```
 
 Or copy the directories under `skills/` into `~/.claude/skills/`.
@@ -128,7 +128,7 @@ Or copy the directories under `skills/` into `~/.claude/skills/`.
 The library:
 
 ```
-pip install git+https://github.com/o-liverschwartz/google-sheets-roundtrip
+pip install git+https://github.com/o-liverschwartz/sheets-fidelity
 ```
 
 ## Where it came from

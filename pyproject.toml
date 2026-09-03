@@ -24,8 +24,8 @@ dependencies = ["gspread>=6"]
 dev = ["pytest>=8"]
 
 [project.urls]
-Homepage = "https://github.com/o-liverschwartz/google-sheets-roundtrip"
-Issues = "https://github.com/o-liverschwartz/google-sheets-roundtrip/issues"
+Homepage = "https://github.com/o-liverschwartz/sheets-fidelity"
+Issues = "https://github.com/o-liverschwartz/sheets-fidelity/issues"
 
 [tool.setuptools.packages.find]
 where = ["src"]

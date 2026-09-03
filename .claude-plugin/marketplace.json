@@ -1,5 +1,5 @@
 {
-  "name": "google-sheets-roundtrip",
+  "name": "sheets-fidelity",
   "metadata": {
     "description": "A small set of tools and agent skills for editing Google Sheets without silently destroying things that matter."
   },
@@ -8,7 +8,7 @@
   },
   "plugins": [
     {
-      "name": "google-sheets-roundtrip",
+      "name": "sheets-fidelity",
       "source": "./"
     }
   ]

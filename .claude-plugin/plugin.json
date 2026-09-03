@@ -1,13 +1,13 @@
 {
-  "name": "google-sheets-roundtrip",
+  "name": "sheets-fidelity",
   "description": "A small set of tools and agent skills for editing Google Sheets without silently destroying things that matter.",
   "version": "1.0.0",
   "author": {
     "name": "Oliver Schwartz",
     "url": "https://github.com/o-liverschwartz"
   },
-  "homepage": "https://github.com/o-liverschwartz/google-sheets-roundtrip",
-  "repository": "https://github.com/o-liverschwartz/google-sheets-roundtrip",
+  "homepage": "https://github.com/o-liverschwartz/sheets-fidelity",
+  "repository": "https://github.com/o-liverschwartz/sheets-fidelity",
   "license": "MIT",
   "keywords": [
     "google-sheets",
