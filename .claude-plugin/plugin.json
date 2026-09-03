@@ -1,0 +1,13 @@
+{
+  "name": "google-sheets-roundtrip",
+  "description": "Read, store and write back Google Sheets without silently destroying formulas, formatting or structure. Three skills plus a tested Python helper for the API's field masks, A1 quoting and value layers.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Oliver Schwartz",
+    "url": "https://github.com/o-liverschwartz"
+  },
+  "homepage": "https://github.com/o-liverschwartz/google-sheets-roundtrip",
+  "repository": "https://github.com/o-liverschwartz/google-sheets-roundtrip",
+  "license": "MIT",
+  "keywords": ["google-sheets", "sheets-api", "gspread", "round-trip", "formatting", "spreadsheets", "data-fidelity"]
+}

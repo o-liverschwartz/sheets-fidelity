@@ -1,0 +1,6 @@
+{
+  "name": "google-sheets-roundtrip",
+  "metadata": { "description": "Read, store and write back Google Sheets without silently destroying formulas, formatting or structure. Three skills plus a tested Python helper for the API's field masks, A1 quoting and value layers." },
+  "owner": { "name": "Oliver Schwartz" },
+  "plugins": [ { "name": "google-sheets-roundtrip", "source": "./" } ]
+}
