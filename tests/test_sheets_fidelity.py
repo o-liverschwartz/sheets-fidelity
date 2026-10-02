@@ -2,7 +2,7 @@
 
 The pure helpers are tested directly, because that is where the bugs actually
 are. The four API-touching functions are tested against a fake that records what
-it was asked for, which is the part that matters -- whether the right field mask
+it was asked for, which is the part that matters: whether the right field mask
 and the right options went out.
 """
 import pytest
@@ -28,7 +28,7 @@ def test_col_letter_is_one_based():
 
 
 # ---------------------------------------------------------------------------
-# quote_a1 -- the 400 that eats an afternoon
+# quote_a1: the 400 that eats an afternoon
 # ---------------------------------------------------------------------------
 
 def test_a_tab_with_a_space_gets_quoted():
@@ -58,13 +58,25 @@ def test_quoting_is_idempotent():
 
 
 # ---------------------------------------------------------------------------
-# validate_bounded_range -- refusing the expensive mistake
+# validate_bounded_range: refusing the expensive mistake
 # ---------------------------------------------------------------------------
 
-@pytest.mark.parametrize("bad", ["A1:H40", "Sheet1", "Sheet1!A1", "", "!"])
+@pytest.mark.parametrize("bad", [
+    "A1:H40", "Sheet1", "", "!", "!A1:B2",
+    "Sheet1!A:A", "Sheet1!1:1", "Sheet1!A1:Z", "Plan: Q3",
+    "Sheet1!$A:$A", "Sheet1!$A$1:$Z",
+])
 def test_unbounded_or_tabless_ranges_are_refused(bad):
     with pytest.raises(sf.RangeError):
         sf.validate_bounded_range(bad)
+
+
+@pytest.mark.parametrize("good", [
+    "Sheet1!A1", "Plan: Q3!A1:B2", "'Wow!'!A1:B2",
+    "Sheet1!$A$1:$B$2", "Sheet1!$A1:B$2", "Sheet1!$C$3",
+])
+def test_a_single_cell_or_a_colon_in_the_tab_name_is_fine(good):
+    assert sf.validate_bounded_range(good)
 
 
 def test_a_bounded_range_passes_and_comes_back_quoted():
@@ -76,6 +88,8 @@ def test_a_bounded_range_passes_and_comes_back_quoted():
 # ---------------------------------------------------------------------------
 
 class FakeWorksheet:
+    title = "Q3 Plan"
+
     def __init__(self):
         self.calls = []
 
@@ -151,7 +165,7 @@ def test_an_invented_input_option_is_refused_before_the_call():
 
 
 # ---------------------------------------------------------------------------
-# read_formatting -- the field masks are the whole point
+# read_formatting: the field masks are the whole point
 # ---------------------------------------------------------------------------
 
 def test_structure_only_by_default():
@@ -185,8 +199,7 @@ def test_an_unbounded_range_never_reaches_the_network():
     sh = FakeSpreadsheet()
     with pytest.raises(sf.RangeError):
         sf.read_formatting(sh, "Sheet1")
-    # The structure fetch is allowed; the expensive one must not have happened.
-    assert len(sh.fetches) == 1
+    assert sh.fetches == []
 
 
 # ---------------------------------------------------------------------------
@@ -204,3 +217,146 @@ def test_an_empty_batch_is_not_a_network_call():
     sh = FakeSpreadsheet()
     assert sf.batch_format(sh, []) == 0
     assert sh.updates == []
+
+
+# ---------------------------------------------------------------------------
+# tab-qualified ranges on the value path
+# ---------------------------------------------------------------------------
+
+def test_a_tab_qualified_range_is_reduced_to_its_span():
+    ws = FakeWorksheet()
+    sf.read_values(ws, "Q3 Plan!C2:C40")
+    sf.write_values(ws, "'Q3 Plan'!C2:C3", [[1], [2]])
+    assert ws.calls[0][1] == "C2:C40"
+    assert ws.calls[1][1] == "C2:C3"
+
+
+def test_a_range_naming_another_tab_is_refused_before_the_call():
+    ws = FakeWorksheet()
+    with pytest.raises(sf.RangeError):
+        sf.read_values(ws, "Other!A1:B2")
+    assert ws.calls == []
+
+
+# ---------------------------------------------------------------------------
+# masks cover what the README says they cover
+# ---------------------------------------------------------------------------
+
+def test_cell_mask_carries_the_content_a_naive_write_loses():
+    for field in ["textFormatRuns", "note", "hyperlink", "hiddenByUser", "dataValidation"]:
+        assert field in sf.FIELDS_CELLS
+
+
+def test_structure_mask_carries_filters():
+    for field in ["basicFilter", "filterViews"]:
+        assert field in sf.FIELDS_STRUCTURE
+
+
+# ---------------------------------------------------------------------------
+# diff_structure
+# ---------------------------------------------------------------------------
+
+def _snap(**kw):
+    props = {"title": "Plan", "gridProperties": {"frozenRowCount": kw.pop("frozen", 0)}}
+    return {"sheets": [{"properties": props, **kw}]}
+
+
+def test_nothing_lost_is_an_empty_diff():
+    a = _snap(merges=[{}], frozen=1)
+    assert sf.diff_structure(a, a) == {}
+
+
+def test_lost_merges_and_frozen_row_are_reported():
+    before = _snap(merges=[{}, {}], conditionalFormats=[{}], frozen=1)
+    after = _snap(conditionalFormats=[{}])
+    assert sf.diff_structure(before, after) == {
+        "Plan": {"merges": (2, 0), "frozenRows": (1, 0)}}
+
+
+def test_a_vanished_tab_is_reported():
+    assert sf.diff_structure(_snap(), {"sheets": []}) == {"Plan": {"tab": (1, 0)}}
+
+
+# ---------------------------------------------------------------------------
+# find_dead_formulas
+# ---------------------------------------------------------------------------
+
+class RenderWorksheet(FakeWorksheet):
+    def __init__(self, formula, unformatted):
+        super().__init__()
+        self.by_render = {"FORMULA": formula, "UNFORMATTED_VALUE": unformatted}
+
+    def get(self, cell_range, value_render_option=None):
+        return self.by_render[value_render_option]
+
+
+def test_dead_formula_is_found_and_blank_rows_do_not_crash():
+    ws = RenderWorksheet(
+        formula=[["=SUM(A1:A9)"], [], ["=B2"], ["plain"]],
+        unformatted=[[45], [], ["=B2"], ["plain"]],
+    )
+    assert sf.find_dead_formulas(ws, "C2:C5") == ["C4"]
+
+
+def test_dead_formulas_accept_an_absolute_range():
+    ws = RenderWorksheet(formula=[["=B2"]], unformatted=[["=B2"]])
+    assert sf.find_dead_formulas(ws, "$C$2:$C$2") == ["C2"]
+
+
+def test_an_absolute_range_reaches_the_cell_fetch():
+    sh = FakeSpreadsheet()
+    sf.read_formatting(sh, "Sheet1!$A$1:$B$2")
+    assert sh.fetches[1]["ranges"] == "'Sheet1'!$A$1:$B$2"
+
+
+# ---------------------------------------------------------------------------
+# The round trip the README leads with: read FORMULA, write USER_ENTERED
+# ---------------------------------------------------------------------------
+
+def test_a_formula_read_as_formula_goes_back_as_a_formula():
+    ws = RenderWorksheet(formula=[["=SUM(A3:B3)"]], unformatted=[[30]])
+    ws.calls = []
+    block = sf.read_values(ws, "C3", render="FORMULA")
+    sf.write_values(ws, "C3", block)
+    assert ws.calls == [("update", "C3", "USER_ENTERED", [["=SUM(A3:B3)"]])]
+
+
+# ---------------------------------------------------------------------------
+# What gspread itself sends. The fakes above take a range verbatim, which is
+# how the doubled tab name got through. This one goes through a real
+# gspread.Worksheet and records the URL range it would request.
+# ---------------------------------------------------------------------------
+
+from gspread.http_client import HTTPClient
+
+
+class RecordingClient(HTTPClient):
+    def __init__(self):   # no auth, no session
+        self.ranges = []
+
+    def values_get(self, id, range, params=None):
+        self.ranges.append(range)
+        return {"range": range, "majorDimension": "ROWS", "values": [["x"]]}
+
+    def values_update(self, id, range, params=None, body=None):
+        self.ranges.append(range)
+        return {"updatedRange": range}
+
+
+def _real_worksheet():
+    import gspread
+    client = RecordingClient()
+    ws = gspread.Worksheet(
+        spreadsheet=None,
+        properties={"sheetId": 0, "title": "Q3 Plan", "index": 0},
+        spreadsheet_id="test",
+        client=client,
+    )
+    return ws, client
+
+
+def test_gspread_sends_the_tab_name_once():
+    ws, client = _real_worksheet()
+    sf.read_values(ws, "Q3 Plan!C2:C40")
+    sf.write_values(ws, "'Q3 Plan'!C2:C3", [[1], [2]])
+    assert client.ranges == ["'Q3 Plan'!C2:C40", "'Q3 Plan'!C2:C3"]

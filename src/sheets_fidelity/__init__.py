@@ -1,6 +1,6 @@
 """Read and write Google Sheets without silently destroying what is already there.
 
-The public surface deliberately mirrors the three layers a spreadsheet actually
+The public surface deliberately mirrors the four layers a spreadsheet actually
 has, rather than hiding them behind one sync_sheet() that guesses.
 """
 from .core import (
@@ -11,6 +11,8 @@ from .core import (
     RangeError,
     batch_format,
     col_letter,
+    diff_structure,
+    find_dead_formulas,
     quote_a1,
     read_formatting,
     read_values,
@@ -33,4 +35,6 @@ __all__ = [
     "read_formatting",
     "write_values",
     "batch_format",
+    "diff_structure",
+    "find_dead_formulas",
 ]
