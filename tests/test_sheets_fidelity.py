@@ -386,3 +386,12 @@ def test_build_output_is_ignored():
     ignored = (ROOT / ".gitignore").read_text().split()
     for entry in ["*.egg-info/", "build/", "dist/"]:
         assert entry in ignored
+
+
+def test_offline_demo_prints_what_the_readme_shows():
+    out = subprocess.run(
+        [sys.executable, str(ROOT / "examples" / "demo_offline.py")],
+        capture_output=True, text=True, check=True,
+        env={**os.environ, "PYTHONPATH": str(ROOT / "src")},
+    ).stdout
+    assert out == "{'Q3 Plan': {'merges': (3, 0), 'frozenRows': (1, 0)}}\n['C3']\n"
