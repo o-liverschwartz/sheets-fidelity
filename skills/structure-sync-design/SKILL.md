@@ -85,10 +85,10 @@ Do not merge these phases into one vague "push."
 Recommend a model that can survive reorder and re-import.
 
 Minimum structure:
-- `row_uid` — stable logical row ID
-- `row_fingerprint` — deterministic matching helper
-- `block_type` — header_block / repeated_block / footer_block / etc.
-- `row_kind` — metric / header / section_header / spacer / formula / note / etc.
+- `row_uid`: stable logical row ID
+- `row_fingerprint`: deterministic matching helper
+- `block_type`: header_block / repeated_block / footer_block / etc.
+- `row_kind`: metric / header / section_header / spacer / formula / note / etc.
 - `group_key`
 - `group_depth`
 - `is_hidden_default`
