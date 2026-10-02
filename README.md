@@ -1,120 +1,35 @@
 # sheets-fidelity
 
-A small set of tools and agent skills for editing Google Sheets without silently
-destroying things that matter.
+Read a Google Sheet with `FORMULA` before you write it back, so formulas go back as formulas. Read it with `UNFORMATTED_VALUE` and write that back, and every formula in the range becomes the number it showed that day. This repo is Python helpers and Claude Code skills built around that, and around the other things a write-back can lose, such as merges, filters, frozen rows and conditional formatting. More of my work is at [oliverschwartz.me](https://oliverschwartz.me).
 
-Reading a sheet is easy. Reading it, holding it in an app, and writing it back
-without losing something is not. The failure is almost always silent: the values
-look right, and the conditional formatting is gone. Or the merges are gone. Or a
-column of live formulas is now text that looks exactly like formulas and
-computes nothing.
+## One cell, before and after
 
-Three skills for Claude Code, and the tested Python underneath them.
+C3 holds `=SUM(A3:B3)`. A3 is 10 and B3 is 20, so C3 shows 30. Read C3, write it back with `USER_ENTERED`, then change A3 to 15.
 
-## The layers
+| Read C3 with | You get | C3 after the write-back | C3 after A3 becomes 15 |
+|---|---|---|---|
+| `UNFORMATTED_VALUE` | `30` | `30`, a plain number | `30` |
+| `FORMULA` | `"=SUM(A3:B3)"` | `=SUM(A3:B3)` | `35` |
 
-None of this makes sense until a spreadsheet stops being one object. It is
-several systems wearing one costume, and the API returns them through different
-fields at wildly different costs.
-
-| Layer | Fields | Cost |
-| --- | --- | --- |
-| Values | `userEnteredValue`, `effectiveValue`, `formattedValue` | cheap |
-| Formatting | `userEnteredFormat`, `effectiveFormat`, `textFormatRuns`, data validation | per cell, expensive |
-| Dimension metadata | row and column pixel sizes, hidden state | per cell range |
-| Sheet structure | frozen panes, merges, conditional formats, protected ranges, banding, row and column groups, named ranges | per sheet, cheap |
-
-Nearly every fidelity bug is a read that fetched one layer and a write that
-assumed all four.
-
-## Reference, diagnose, design
-
-The three skills do different jobs, in that order.
-
-`roundtrip-reference` is the knowledge layer: what Sheets actually stores, what
-the API actually returns, and what survives a write back. Everything else stands
-on it, and it is the only one that loads automatically, because it applies
-whenever you are reading, writing, or reasoning about sheet behaviour.
-
-`fidelity-audit` is the diagnostic workflow. When a sheet imports correctly but
-writes back wrong, it refuses to let you patch first. It makes you prove whether
-fidelity dies during read, during storage, or during write, then build a loss map
-before you change a line. Manual invoke.
-
-`structure-sync-design` is the architecture workflow, for systems that need more
-than raw cell writes: template engines, sheet editors, repeated per-section
-blocks. It separates a content engine from a layout engine, and introduces stable
-row identities, ownership boundaries, and blast-radius previews. Manual invoke.
-
-## The Python
-
-`sheets_fidelity` is the reference made executable. The API mirrors the
-conceptual model instead of hiding it behind one magical `sync_sheet()`:
+Nothing errors in the first row. The sheet looks right until someone changes an input.
 
 ```python
-read_values(worksheet, "C2:C40", render="UNFORMATTED_VALUE")
-read_formatting(spreadsheet)                      # structure only, safe at any size
-read_formatting(spreadsheet, "Q3 Plan!A1:H40")    # adds per-cell detail, bounded
-write_values(worksheet, "C2:C40", rows)           # touches C2:C40 and nothing else
-batch_format(spreadsheet, requests)               # everything that is not a value
+from sheets_fidelity import read_values, write_values
+
+block = read_values(ws, "C2:C40", render="FORMULA")
+# change the cells you meant to change
+write_values(ws, "C2:C40", block)   # USER_ENTERED, so "=..." stays a formula
 ```
 
-Four functions, one per thing you can actually do. If you want values you read
-values; if you want structure you read structure. You cannot accidentally pull a
-hundred megabytes because you wanted to know whether row 1 was frozen.
+The table is what the Sheets API documents for these render options. I have not run it against a live sheet yet. [docs/LIVE-CHECK.md](docs/LIVE-CHECK.md) does that in about a minute on a scratch sheet.
 
-It takes a `gspread` worksheet or spreadsheet you have already built.
-Authentication is not its business.
-
-### Three things that are easy to get wrong
-
-`validate_bounded_range` refuses before the network call. An unbounded
-cell-metadata fetch on a real working sheet returns hundreds of megabytes and
-reads like a hang rather than an error. `read_formatting` requires a bounded
-range for its expensive half and rejects `"Sheet1"` or `"Sheet1!A1"` locally, so
-the mistake costs nothing.
-
-`FORMULA` can never prove a formula is live. It returns the same `"=SUM(A1:A9)"`
-string for a live formula and for a cell containing that text. Only
-`UNFORMATTED_VALUE` tells them apart, because a live formula returns its computed
-value. This is the most common silent round-trip failure there is.
-
-`quote_a1` doubles the apostrophe. A tab named `Q3 Plan` or `Sales (EU)` is a 400
-unless the sheet name is single-quoted, and `Bob's Tab` needs the apostrophe
-doubled. Handled centrally, because the apostrophe case looks fine in testing and
-breaks on a real user's tab.
-
-## Tests
-
-```
-python -m pytest
-```
-
-34 tests, entirely offline. No credentials, no network, no live spreadsheet. The
-pure helpers are tested directly. The four API-touching functions run against a
-fake that records what it was asked for, so the tests assert the behaviour that
-actually matters:
-
-- unbounded metadata reads never reach the network
-- a structure read does not accidentally request grid data
-- the structure field mask includes the easy-to-lose pieces: conditional formats,
-  protected ranges, banding, merges, groups, named ranges
-- quoted, unquoted and apostrophe-bearing tab names all resolve correctly
-- an invalid render or input option fails before a request is made
-
-## Layout
-
-```
-skills/
-  roundtrip-reference/     knowledge layer, loads automatically
-  fidelity-audit/          diagnostic workflow, manual invoke
-  structure-sync-design/   architecture workflow, manual invoke
-src/sheets_fidelity/       the library
-tests/                     34 offline tests
-examples/                  runnable shapes
-```
+[Oliver: which failure bit you first, and on what kind of sheet? One or two sentences in your words, or delete this line.]
 
 ## Install
+
+```
+pip install git+https://github.com/o-liverschwartz/sheets-fidelity
+```
 
 The skills, as a Claude Code plugin:
 
@@ -123,20 +38,71 @@ The skills, as a Claude Code plugin:
 /plugin install sheets-fidelity@sheets-fidelity
 ```
 
-Or copy the directories under `skills/` into `~/.claude/skills/`.
-
-The library:
+To run the tests and the offline demo from a clone:
 
 ```
-pip install git+https://github.com/o-liverschwartz/sheets-fidelity
+pip install -e ".[dev]"
+python -m pytest
+python examples/demo_offline.py
 ```
 
-## Where it came from
+You bring your own `gspread` client. `examples/README.md` has one snippet per function.
 
-An MCP server I built for retail operations, where a wrong write lands in a
-spreadsheet somebody is using to run a store that afternoon. The generic core is
-what's here; the business logic stayed behind.
+## Two checks
 
-## Licence
+A rewrite kept the values and the two conditional rules, and dropped the merges and the frozen header. Nothing errored. Snapshot the structure before and after, and diff it:
+
+```python
+from sheets_fidelity import diff_structure
+
+before = tab(merges=3, rules=2, frozen=1)
+after = tab(rules=2)
+print(diff_structure(before, after))
+```
+
+```
+{'Q3 Plan': {'merges': (3, 0), 'frozenRows': (1, 0)}}
+```
+
+In real use `before` and `after` are `read_formatting(spreadsheet)["structure"]`, taken either side of your write. An empty dict means nothing was lost. `tab()` is the canned snapshot in `examples/demo_offline.py`.
+
+The second check finds formulas that have turned into text. `FORMULA` returns `"=SUM(A3:B3)"` for a live formula and for a cell that only holds that text. `UNFORMATTED_VALUE` returns the computed number for the first and the text for the second, so the function reads both and compares:
+
+```python
+from sheets_fidelity import find_dead_formulas
+
+print(find_dead_formulas(worksheet, "C2:C4"))
+```
+
+```
+['C3']
+```
+
+`worksheet` here is the fake `Sheet` from the same file.
+
+## What is in it
+
+- `read_values`: one of three render modes, checked before the call.
+- `write_values`: writes the range you name and nothing else.
+- `read_formatting`: sheet structure at any size. Per-cell formatting only for a bounded range such as `Sheet1!A1:H40` or `Sheet1!$A$1:$H$40`. It refuses `Sheet1`, `Sheet1!A:A` and `Sheet1!A1:Z` before any request goes out.
+- `batch_format`: raw `batchUpdate` requests, for everything that is not a value.
+- `diff_structure`, `find_dead_formulas`: the two checks above.
+- `quote_a1`: single-quotes tab names like `Q3 Plan` and doubles the apostrophe in `Bob's Tab`.
+
+Three skills sit on top. `roundtrip-reference` is what Sheets stores and what survives a write, and it loads on its own. `fidelity-audit` makes you prove whether data is lost on read, in storage or on write before you patch anything. `structure-sync-design` separates a content engine from a layout engine for template-driven sheets. The last two run only when you invoke them.
+
+## What it does not do
+
+- It does not authenticate. Pass in a `gspread` worksheet or spreadsheet.
+- The test suite has not touched a live sheet. The 61 tests run offline, against fakes and one real `gspread.Worksheet` with a stubbed HTTP client, so they prove what is requested and not what Google returns.
+- It does not protect text that looks like a formula. A cell holding the text `=B2` reads back as `=B2` under `FORMULA`, and a `USER_ENTERED` write makes it live. Run `find_dead_formulas` on the range first.
+- It does not cover charts, slicers or pivot tables.
+- It does not retry on rate limits or repair a sheet after a bad write. It tells you what was lost.
+
+## How this was built
+
+[Oliver: keep the `Co-Authored-By: Claude` trailers on commits, and say here how you used AI? If yes, one or two sentences in your words. If no, delete this section.]
+
+## License
 
 MIT. See [LICENSE](LICENSE).
