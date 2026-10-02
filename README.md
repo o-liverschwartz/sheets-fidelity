@@ -23,8 +23,6 @@ write_values(ws, "C2:C40", block)   # USER_ENTERED, so "=..." stays a formula
 
 The table is what the Sheets API documents for these render options. I have not run it against a live sheet yet. [docs/LIVE-CHECK.md](docs/LIVE-CHECK.md) does that in about a minute on a scratch sheet.
 
-[Oliver: which failure bit you first, and on what kind of sheet? One or two sentences in your words, or delete this line.]
-
 ## Install
 
 ```
@@ -98,10 +96,6 @@ Three skills sit on top. `roundtrip-reference` is what Sheets stores and what su
 - It does not protect text that looks like a formula. A cell holding the text `=B2` reads back as `=B2` under `FORMULA`, and a `USER_ENTERED` write makes it live. Run `find_dead_formulas` on the range first.
 - It does not cover charts, slicers or pivot tables.
 - It does not retry on rate limits or repair a sheet after a bad write. It tells you what was lost.
-
-## How this was built
-
-[Oliver: keep the `Co-Authored-By: Claude` trailers on commits, and say here how you used AI? If yes, one or two sentences in your words. If no, delete this section.]
 
 ## License
 
