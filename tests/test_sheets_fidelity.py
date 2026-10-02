@@ -360,3 +360,29 @@ def test_gspread_sends_the_tab_name_once():
     sf.read_values(ws, "Q3 Plan!C2:C40")
     sf.write_values(ws, "'Q3 Plan'!C2:C3", [[1], [2]])
     assert client.ranges == ["'Q3 Plan'!C2:C40", "'Q3 Plan'!C2:C3"]
+
+
+# ---------------------------------------------------------------------------
+# Repo hygiene: one version everywhere, build output ignored
+# ---------------------------------------------------------------------------
+
+import json
+import os
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+
+
+def test_one_version_everywhere():
+    pyproject = re.search(r'^version = "([^"]+)"', (ROOT / "pyproject.toml").read_text(), re.M)
+    plugin = json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text())
+    assert pyproject.group(1) == plugin["version"] == sf.__version__
+
+
+def test_build_output_is_ignored():
+    ignored = (ROOT / ".gitignore").read_text().split()
+    for entry in ["*.egg-info/", "build/", "dist/"]:
+        assert entry in ignored

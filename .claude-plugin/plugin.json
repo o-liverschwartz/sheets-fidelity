@@ -1,7 +1,7 @@
 {
   "name": "sheets-fidelity",
-  "description": "A small set of tools and agent skills for editing Google Sheets without silently destroying things that matter.",
-  "version": "1.0.0",
+  "description": "Python helpers and Claude Code skills for editing Google Sheets without losing formulas, merges or formatting.",
+  "version": "0.1.0",
   "author": {
     "name": "Oliver Schwartz",
     "url": "https://github.com/o-liverschwartz"

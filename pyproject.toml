@@ -5,14 +5,14 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "sheets-fidelity"
 version = "0.1.0"
-description = "Safe Google Sheets read/write primitives for preserving values, formatting, and structure."
+description = "Python helpers and Claude Code skills for editing Google Sheets without losing formulas, merges or formatting."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { file = "LICENSE" }
 authors = [{ name = "Oliver Schwartz" }]
 keywords = ["google-sheets", "sheets-api", "gspread", "round-trip", "formatting", "spreadsheets"]
 classifiers = [
-  "Development Status :: 4 - Beta",
+  "Development Status :: 3 - Alpha",
   "Intended Audience :: Developers",
   "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3",

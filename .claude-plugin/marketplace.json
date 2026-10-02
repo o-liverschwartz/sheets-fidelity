@@ -1,7 +1,7 @@
 {
   "name": "sheets-fidelity",
   "metadata": {
-    "description": "A small set of tools and agent skills for editing Google Sheets without silently destroying things that matter."
+    "description": "Python helpers and Claude Code skills for editing Google Sheets without losing formulas, merges or formatting."
   },
   "owner": {
     "name": "Oliver Schwartz"

@@ -5,5 +5,7 @@ __pycache__/
 ._*
 .venv/
 venv/
-.letta/
 .claude/
+*.egg-info/
+build/
+dist/
